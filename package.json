@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run"
   },
   "keywords": [
     "owlbear",
@@ -17,10 +20,13 @@
   "license": "MIT",
   "packageManager": "pnpm@9.15.0",
   "devDependencies": {
+    "@vitest/ui": "^4.0.14",
+    "happy-dom": "^20.0.11",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vite": "^5.0.0",
-    "vite-plugin-mkcert": "^1.17.9"
+    "vite-plugin-mkcert": "^1.17.9",
+    "vitest": "^4.0.14"
   },
   "dependencies": {
     "@davidsev/owlbear-utils": "^1.1.2",
