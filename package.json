@@ -2,7 +2,7 @@
   "name": "owlbear-terrain",
   "version": "1.0.0",
   "description": "An Owlbear Rodeo extension for advanced terrain features including altitude, difficult terrain, currents, and terrain effects",
-  "main": "src/index.js",
+  "main": "src/main.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

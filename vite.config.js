@@ -1,5 +1,4 @@
 import { defineConfig } from 'vite';
-import { copyFileSync } from 'fs';
 
 export default defineConfig({
   build: {
