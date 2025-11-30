@@ -1,15 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Owlbear Terrain</title>
     <link rel="stylesheet" href="/style.css">
 </head>
+
 <body>
     <div class="container">
         <h1>Terrain Tools</h1>
-        
+
+        <div id="gridInfo" class="grid-info" style="display: none;"></div>
+
         <div class="section">
             <h2>Terrain Types</h2>
             <div class="terrain-options">
@@ -39,17 +43,20 @@
         <div class="section" id="terrainSettings" style="display: none;">
             <h2>Terrain Settings</h2>
             <div id="settingsContent"></div>
-            <button id="applyTerrain" class="primary-btn">Apply Terrain</button>
         </div>
 
         <div class="section">
-            <h2>Active Terrain</h2>
+            <div class="section-header">
+                <h2>Active Terrain</h2>
+                <button id="clearAllTerrain" class="danger-btn">Clear All</button>
+            </div>
             <div id="activeTerrainList" class="terrain-list">
                 <p class="empty-state">No active terrain areas</p>
             </div>
         </div>
     </div>
-    
-    <script type="module" src="/src/main.js"></script>
+
+    <script type="module" src="/src/main.ts"></script>
 </body>
+
 </html>

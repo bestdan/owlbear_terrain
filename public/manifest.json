@@ -4,12 +4,13 @@
   "manifest_version": 1,
   "description": "Advanced terrain features for Owlbear Rodeo including altitude, difficult terrain, currents, and terrain effects",
   "author": "Dan Egan",
-  "icon": "/icon.svg",
+  "icon": "/terrain_icon.svg",
+  "background_url": "/index.html",
   "action": {
     "title": "Terrain Tools",
-    "icon": "/icon.svg",
-    "popover": "/index.html",
-    "height": 400,
+    "icon": "/terrain_icon.svg",
+    "popover": "/index.html?popover=true",
+    "height": 600,
     "width": 350
   }
 }
