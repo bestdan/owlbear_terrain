@@ -1,16 +1,8 @@
-import OBR, { buildShape, Item } from "@owlbear-rodeo/sdk";
+import OBR, { buildPath, Item } from "@owlbear-rodeo/sdk";
 import { grid, Point } from "@davidsev/owlbear-utils";
 import { CellOutliner, Command } from "./utils/CellOutliner";
 
-// Initialize the Owlbear Rodeo SDK
-let selectedTerrainType: string | null = null;
-let pendingTerrainData: any = null;
-let gridInfo: any = null;
-let selectedCells = new Set<string>(); // Store unique cell coordinates as "x,y" strings
-let previewShape: any = null;
-let isDrawingMode = false;
-
-
+const TOOL_ID = "owlbear-terrain/tool";
 const TOOL_MODE_ID = "owlbear-terrain/draw-mode";
 
 // Terrain type colors and styles
@@ -22,18 +14,204 @@ const TERRAIN_STYLES: Record<string, { fillColor: string, strokeColor: string, f
     hazard: { fillColor: '#FF4500', strokeColor: '#8B0000', fillOpacity: 0.3 }
 };
 
+// UI state (popover context only)
+let selectedTerrainType: string | null = null;
+let pendingTerrainData: any = null;
+let gridInfo: any = null;
+
 // Initialize when OBR is ready
 OBR.onReady(async () => {
-    console.log("Owlbear Terrain extension loaded");
+    const searchParams = new URLSearchParams(window.location.search);
+    const isPopover = searchParams.get('popover') === 'true';
+
+    if (!isPopover) {
+        // Background mode - register the tool
+        console.log("Owlbear Terrain background loaded");
+
+        // State for the tool mode (in background context)
+        let currentInteraction: any = null;
+        const selectedCells = new Set<string>();
+
+        await OBR.tool.create({
+            id: TOOL_ID,
+            shortcut: "N",
+            icons: [{
+                icon: "/icon.svg",
+                label: "Terrain",
+            }],
+            defaultMode: TOOL_MODE_ID,
+        });
+
+        await OBR.tool.createMode({
+            id: TOOL_MODE_ID,
+            icons: [],
+            async onToolDragStart(_context, event) {
+                console.log('Drag start at:', event.pointerPosition);
+
+                // Get terrain data from scene metadata
+                const metadata = await OBR.scene.getMetadata();
+                console.log('Scene metadata:', metadata);
+
+                const terrainData = metadata['owlbear-terrain/pendingData'] as any;
+                console.log('Terrain data:', terrainData);
+
+                if (!terrainData) {
+                    console.error('No terrain data in scene metadata. Please click "Apply Terrain" first.');
+                    return;
+                }
+
+                const style = TERRAIN_STYLES[terrainData.type];
+
+                // Clear previous selection
+                selectedCells.clear();
+
+                // Add starting cell
+                const point = new Point(event.pointerPosition.x, event.pointerPosition.y);
+                const cell = grid.getCell(point);
+                const cellX = Math.floor(cell.center.x / grid.dpi);
+                const cellY = Math.floor(cell.center.y / grid.dpi);
+                selectedCells.add(`${cellX},${cellY}`);
+
+                // Create initial path shape
+                const shape = buildPath()
+                    .position({ x: cell.center.x, y: cell.center.y })
+                    .commands([[Command.MOVE, 0, 0], [Command.LINE, grid.dpi, 0], [Command.LINE, grid.dpi, grid.dpi], [Command.LINE, 0, grid.dpi], [Command.CLOSE]])
+                    .fillColor(style.fillColor)
+                    .fillOpacity(style.fillOpacity)
+                    .strokeColor(style.strokeColor)
+                    .strokeWidth(3)
+                    .strokeDash([10, 5])
+                    .layer("DRAWING")
+                    .name(`${terrainData.name} (drawing)`)
+                    .metadata({
+                        'owlbear-terrain/type': terrainData.type,
+                        'owlbear-terrain/data': terrainData,
+                        'owlbear-terrain/temp': true
+                    })
+                    .build();
+
+                console.log('Starting interaction with shape:', shape);
+                try {
+                    currentInteraction = await OBR.interaction.startItemInteraction([shape]);
+                    console.log('Interaction started successfully');
+                } catch (error) {
+                    console.error('Failed to start interaction:', error);
+                    throw error;
+                }
+            },
+            async onToolDragMove(_context, event) {
+                if (!currentInteraction) return;
+
+                const point = new Point(event.pointerPosition.x, event.pointerPosition.y);
+                const cell = grid.getCell(point);
+                const cellX = Math.floor(cell.center.x / grid.dpi);
+                const cellY = Math.floor(cell.center.y / grid.dpi);
+                const cellKey = `${cellX},${cellY}`;
+                selectedCells.add(cellKey);
+
+                const [update] = currentInteraction;
+                update((items: any[]) => {
+                    if (items.length > 0 && selectedCells.size > 0) {
+                        // Convert cells to path
+                        const cells = Array.from(selectedCells).map(key => {
+                            const [x, y] = key.split(',').map(Number);
+                            const cellPoint = new Point(x * grid.dpi, y * grid.dpi);
+                            return grid.getCell(cellPoint);
+                        });
+
+                        const outliner = new CellOutliner(cells);
+                        const commands = outliner.getOutlinePath();
+
+                        if (commands.length > 0) {
+                            // Calculate bounds
+                            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                            for (const loop of outliner.outline) {
+                                for (const point of loop) {
+                                    minX = Math.min(minX, point.x);
+                                    minY = Math.min(minY, point.y);
+                                    maxX = Math.max(maxX, point.x);
+                                    maxY = Math.max(maxY, point.y);
+                                }
+                            }
+
+                            // Normalize commands to be relative to position
+                            const normalizedCommands = commands.map(cmd => {
+                                const newCmd = [...cmd];
+                                if (newCmd[0] === Command.MOVE || newCmd[0] === Command.LINE) {
+                                    newCmd[1] -= minX;
+                                    newCmd[2] -= minY;
+                                }
+                                return newCmd;
+                            });
+
+                            // Update path - PATH items don't have width/height, bounds are calculated from commands
+                            items[0].position = { x: minX, y: minY };
+                            items[0].commands = normalizedCommands;
+                        }
+                    }
+                });
+            },
+            async onToolDragEnd(_context, _event) {
+                console.log('Drag end, cells:', selectedCells.size);
+
+                if (!currentInteraction) return;
+
+                const [update, stop] = currentInteraction;
+
+                // Only add items if we have enough cells
+                if (selectedCells.size > 0) {
+                    // Do a final update to finalize the items
+                    const items = update((items: any[]) => {
+                        if (items.length > 0) {
+                            delete items[0].metadata['owlbear-terrain/temp'];
+                            // Update stroke dash in style (remove the dashed line)
+                            items[0].style.strokeDash = [];
+                            items[0].metadata['owlbear-terrain/cellCount'] = selectedCells.size;
+                        }
+                    });
+
+                    console.log('Adding terrain items to scene, count:', items.length);
+                    console.log('Item details:', JSON.stringify(items[0], null, 2));
+
+                    // Add items to scene before stopping interaction
+                    if (items.length > 0) {
+                        try {
+                            await OBR.scene.items.addItems(items);
+                            console.log('Items added successfully');
+                        } catch (error) {
+                            console.error('Failed to add items:', error);
+                            console.error('Error details:', JSON.stringify(error, null, 2));
+                        }
+                    }
+                }
+
+                // Stop the interaction (this removes temporary items)
+                stop();
+                currentInteraction = null;
+                selectedCells.clear();
+            },
+            async onToolDragCancel() {
+                if (currentInteraction) {
+                    const [, stop] = currentInteraction;
+                    stop();
+                    currentInteraction = null;
+                }
+                selectedCells.clear();
+            }
+        });
+
+        console.log("Terrain tool registered");
+        return;
+    }
+
+    // Popover mode - UI
+    console.log("Owlbear Terrain extension loaded (UI)");
 
     // Set up event listeners
     setupEventListeners();
 
     // Load grid information and initialize grid utility
     await loadGridInfo();
-
-    // Create custom tool
-    await setupCustomTool();
 
     // Load and display existing terrain areas
     await loadTerrainAreas();
@@ -66,257 +244,11 @@ function setupEventListeners() {
         applyBtn.addEventListener('click', startTerrainDrawing);
     }
 
-    // Finish button (hidden by default)
-    const finishBtn = document.getElementById('finishTerrain');
-    if (finishBtn) {
-        finishBtn.addEventListener('click', finishTerrainDrawing);
-    }
-
-    // Cancel button (hidden by default)
-    const cancelBtn = document.getElementById('cancelTerrain');
-    if (cancelBtn) {
-        cancelBtn.addEventListener('click', cancelTerrainDrawing);
-    }
-
     // Clear all terrain button
     const clearAllBtn = document.getElementById('clearAllTerrain');
     if (clearAllBtn) {
         clearAllBtn.addEventListener('click', clearAllTerrain);
     }
-}
-
-async function setupCustomTool() {
-    // Register a custom tool mode for drawing terrain
-    await OBR.tool.createMode({
-        id: TOOL_MODE_ID,
-        icons: [],
-        onToolDragStart: async (_context, event) => {
-            if (!isDrawingMode) return;
-            addCellsInDrag(event.pointerPosition, event.pointerPosition);
-        },
-
-        onToolDragMove: async (_context, event) => {
-            if (!isDrawingMode) return;
-            // Add cells as we drag
-            addCellsInDrag(event.pointerPosition, event.pointerPosition);
-        },
-
-        onToolDragEnd: async (_context, _event) => {
-            // Don't finish - just release the drag
-            await updatePreviewShape();
-        },
-
-        onToolClick: async (_context, event) => {
-            if (!isDrawingMode) return;
-            console.log('Tool clicked at:', event.pointerPosition);
-            // Single click adds/toggles a cell
-            const point = new Point(event.pointerPosition.x, event.pointerPosition.y);
-            const cell = grid.getCell(point);
-            // Calculate grid indices
-            const cellX = Math.floor(cell.center.x / grid.dpi);
-            const cellY = Math.floor(cell.center.y / grid.dpi);
-            const cellKey = `${cellX},${cellY}`;
-            console.log('Toggling cell:', cellKey);
-
-            if (selectedCells.has(cellKey)) {
-                selectedCells.delete(cellKey);
-            } else {
-                selectedCells.add(cellKey);
-            }
-
-            await updatePreviewShape();
-        }
-    });
-}
-
-function addCellsInDrag(start: { x: number, y: number }, end: { x: number, y: number }) {
-    const startPoint = new Point(start.x, start.y);
-    const endPoint = new Point(end.x, end.y);
-
-    const startCell = grid.getCell(startPoint);
-    const endCell = grid.getCell(endPoint);
-
-    // Calculate grid indices
-    const startX = Math.floor(startCell.center.x / grid.dpi);
-    const startY = Math.floor(startCell.center.y / grid.dpi);
-    const endX = Math.floor(endCell.center.x / grid.dpi);
-    const endY = Math.floor(endCell.center.y / grid.dpi);
-
-    // Get all cells in the rectangle
-    const minCellX = Math.min(startX, endX);
-    const maxCellX = Math.max(startX, endX);
-    const minCellY = Math.min(startY, endY);
-    const maxCellY = Math.max(startY, endY);
-
-    for (let x = minCellX; x <= maxCellX; x++) {
-        for (let y = minCellY; y <= maxCellY; y++) {
-            selectedCells.add(`${x},${y}`);
-        }
-    }
-}
-
-async function updatePreviewShape() {
-    console.log('Updating preview shape. Selected cells:', selectedCells.size);
-    if (selectedCells.size === 0) {
-        if (previewShape) {
-            await OBR.scene.items.deleteItems([previewShape.id]);
-            previewShape = null;
-        }
-        return;
-    }
-
-    const style = TERRAIN_STYLES[pendingTerrainData.type];
-
-    // Convert selected cells to Cell objects
-    const cells = [];
-    for (const cellKey of selectedCells) {
-        const [x, y] = cellKey.split(',').map(Number);
-        // We use the center of the cell to ensure we get the correct cell from grid.getCell
-        // grid.dpi is the size of a cell in world units.
-        // We need to convert grid index back to world coordinate (roughly center)
-        // Note: grid indices might be 0.5 offset depending on how grid works, but usually 
-        // if we rounded center/dpi, then index*dpi is close to center.
-        const cellPoint = new Point(x * grid.dpi, y * grid.dpi);
-        cells.push(grid.getCell(cellPoint));
-    }
-    console.log('Converted to cells:', cells.length);
-
-    const outliner = new CellOutliner(cells);
-    const commands = outliner.getOutlinePath();
-    console.log('Generated commands:', commands);
-
-    if (commands.length === 0) {
-        console.warn('No commands generated from cells');
-        return;
-    }
-
-    // Calculate bounding box from the outline points
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-
-    // Iterate over outline loops to find bounds
-    for (const loop of outliner.outline) {
-        for (const point of loop) {
-            minX = Math.min(minX, point.x);
-            minY = Math.min(minY, point.y);
-            maxX = Math.max(maxX, point.x);
-            maxY = Math.max(maxY, point.y);
-        }
-    }
-
-    const width = maxX - minX;
-    const height = maxY - minY;
-
-    // Normalize commands to be relative to the top-left (minX, minY)
-    const normalizedCommands = commands.map(cmd => {
-        const newCmd = [...cmd];
-        if (newCmd[0] === Command.MOVE || newCmd[0] === Command.LINE) {
-            newCmd[1] -= minX;
-            newCmd[2] -= minY;
-        }
-        // Handle other commands if implemented (QUAD, CUBIC etc have more points)
-        // CellOutliner only produces MOVE, LINE, CLOSE
-        return newCmd;
-    });
-
-    if (previewShape) {
-        // Update existing preview
-        await OBR.scene.items.updateItems([previewShape.id], (items) => {
-            for (let item of items) {
-                item.width = width;
-                item.height = height;
-                item.position = { x: minX, y: minY };
-                // @ts-ignore - commands is valid for PATH type
-                item.commands = normalizedCommands;
-                item.metadata['owlbear-terrain/cellCount'] = selectedCells.size;
-            }
-        });
-    } else {
-        // Create new preview
-        const shape = buildShape()
-            .position({ x: minX, y: minY })
-            .width(width)
-            .height(height)
-            .shapeType("PATH" as any)
-            .fillColor(style.fillColor)
-            .fillOpacity(style.fillOpacity)
-            .strokeColor(style.strokeColor)
-            .strokeWidth(3)
-            .strokeDash([10, 5]) // Dashed to show it's a preview
-            .layer("DRAWING")
-            .name(`${pendingTerrainData.name} (preview)`)
-            .metadata({
-                'owlbear-terrain/type': pendingTerrainData.type,
-                'owlbear-terrain/data': pendingTerrainData,
-                'owlbear-terrain/temp': true,
-                'owlbear-terrain/cellCount': selectedCells.size
-            })
-            .build();
-
-        // @ts-ignore - commands is valid for PATH type
-        shape.commands = normalizedCommands;
-
-        await OBR.scene.items.addItems([shape]);
-        previewShape = shape;
-    }
-}
-
-async function finishTerrainDrawing() {
-    if (selectedCells.size === 0) {
-        OBR.notification.show('No cells selected', 'WARNING');
-        return;
-    }
-
-    if (previewShape) {
-        // Convert preview to final terrain
-        await OBR.scene.items.updateItems([previewShape.id], (items) => {
-            for (let item of items) {
-                delete item.metadata['owlbear-terrain/temp'];
-                item.strokeDash = []; // Remove dashed border
-                item.name = pendingTerrainData.name;
-
-                // Calculate grid size
-                const gridWidth = Math.round(item.width / grid.dpi);
-                const gridHeight = Math.round(item.height / grid.dpi);
-                item.metadata['owlbear-terrain/gridSize'] = { width: gridWidth, height: gridHeight };
-            }
-        });
-
-        OBR.notification.show(`Terrain "${pendingTerrainData.name}" created with ${selectedCells.size} cells!`, 'SUCCESS');
-    }
-
-    // Clean up
-    await resetDrawingMode();
-
-    // Refresh list
-    await loadTerrainAreas();
-
-    // Switch back to select tool
-    await OBR.tool.activateTool("rodeo.owlbear.tool/select");
-}
-
-async function cancelTerrainDrawing() {
-    if (previewShape) {
-        await OBR.scene.items.deleteItems([previewShape.id]);
-    }
-
-    await resetDrawingMode();
-
-    // Switch back to select tool
-    await OBR.tool.activateTool("rodeo.owlbear.tool/select");
-
-    OBR.notification.show('Terrain drawing cancelled', 'INFO');
-}
-
-async function resetDrawingMode() {
-    selectedCells.clear();
-    previewShape = null;
-    isDrawingMode = false;
-    pendingTerrainData = null;
-
-    // Hide action buttons, show apply button
-    document.getElementById('finishTerrain')?.classList.add('hidden');
-    document.getElementById('cancelTerrain')?.classList.add('hidden');
-    document.getElementById('applyTerrain')?.classList.remove('hidden');
 }
 
 async function loadGridInfo() {
@@ -491,24 +423,43 @@ async function startTerrainDrawing() {
             break;
     }
 
-    // Enter drawing mode
-    isDrawingMode = true;
-    selectedCells.clear();
+    console.log('Starting terrain drawing mode with data:', pendingTerrainData);
 
-    // Show Finish/Cancel buttons, hide Apply button
-    document.getElementById('applyTerrain')?.classList.add('hidden');
-    document.getElementById('finishTerrain')?.classList.remove('hidden');
-    document.getElementById('cancelTerrain')?.classList.remove('hidden');
+    try {
+        // Store terrain data in scene-level metadata so it can be accessed by background context
+        await OBR.scene.setMetadata({
+            'owlbear-terrain/pendingData': pendingTerrainData
+        });
+        console.log('Scene metadata set with terrain data');
 
-    // Show instructions
-    OBR.notification.show(
-        'Click and drag to paint terrain cells. Click Finish when done.',
-        'INFO'
-    );
+        // Activate the terrain tool
+        await OBR.tool.activateTool(TOOL_ID);
+        console.log('Tool activation called');
 
-    // Activate our custom tool
-    await OBR.tool.activateTool("rodeo.owlbear.tool/select");
-    await OBR.tool.activateMode("rodeo.owlbear.tool/select", TOOL_MODE_ID);
+        // Verify tool is active
+        const activeTool = await OBR.tool.getActiveTool();
+        console.log('Active tool after activation:', activeTool);
+
+        if (activeTool === TOOL_ID) {
+            // Show instructions
+            OBR.notification.show(
+                'Terrain tool active! Click and drag on the map to paint terrain cells.',
+                'INFO'
+            );
+        } else {
+            console.error('Tool activation failed. Active tool is:', activeTool);
+            OBR.notification.show(
+                'Failed to activate terrain tool. Please try pressing N or clicking the Terrain icon in the toolbar.',
+                'ERROR'
+            );
+        }
+    } catch (error) {
+        console.error('Error activating tool:', error);
+        OBR.notification.show(
+            'Error: ' + (error as Error).message,
+            'ERROR'
+        );
+    }
 }
 
 async function loadTerrainAreas() {
