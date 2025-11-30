@@ -23,26 +23,30 @@ export function updateTerrainList(terrainItems: Item[], gridInfo: GridInfo | nul
                     <div class="terrain-item-name">${item.name}</div>
                     <div class="terrain-item-details">${details}</div>
                 </div>
-                <button class="terrain-item-remove" onclick="window.removeTerrain('${item.id}')">Remove</button>
+                <button class="terrain-item-remove" data-item-id="${item.id}">Remove</button>
             </div>
         `;
     });
 
     listContainer.innerHTML = html;
+
+    // Attach event listeners to remove buttons
+    const removeButtons = listContainer.querySelectorAll<HTMLButtonElement>('.terrain-item-remove');
+    removeButtons.forEach(button => {
+        button.addEventListener('click', async () => {
+            const itemId = button.dataset.itemId;
+            if (itemId) {
+                await removeTerrainItem(itemId);
+                const terrainItems = await loadTerrainAreas();
+                updateTerrainList(terrainItems, gridInfo);
+            }
+        });
+    });
 }
 
 export function setupTerrainRemovalHandler() {
-    // Make removeTerrain available globally for onclick handlers
-    (window as any).removeTerrain = async function (itemId: string) {
-        try {
-            await removeTerrainItem(itemId);
-            const terrainItems = await loadTerrainAreas();
-            const gridInfo = (window as any).__terrainGridInfo || null;
-            updateTerrainList(terrainItems, gridInfo);
-        } catch (error) {
-            console.error('Error in removeTerrain handler:', error);
-        }
-    };
+    // This function is now empty as event handlers are set up directly in updateTerrainList
+    // Kept for API compatibility
 }
 
 export function showTerrainSettings(type: string, gridInfo: GridInfo | null) {

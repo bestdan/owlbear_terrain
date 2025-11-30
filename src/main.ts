@@ -27,15 +27,13 @@ OBR.onReady(async () => {
     // Set up event listeners
     setupEventListeners();
 
-    // Setup terrain removal handler
+    // Setup terrain removal handler (now empty but kept for API compatibility)
     setupTerrainRemovalHandler();
 
     // Load grid information and initialize grid utility
     gridInfo = await loadGridInfo();
     if (gridInfo) {
         updateGridDisplay(gridInfo);
-        // Store gridInfo globally for removal handler
-        (window as any).__terrainGridInfo = gridInfo;
     }
 
     // Load and display existing terrain areas
