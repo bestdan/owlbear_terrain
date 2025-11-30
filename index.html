@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owlbear Terrain</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Terrain Tools</h1>
+        
+        <div class="section">
+            <h2>Terrain Types</h2>
+            <div class="terrain-options">
+                <button class="terrain-btn" data-type="altitude">
+                    <span class="icon">⛰️</span>
+                    <span>Altitude</span>
+                </button>
+                <button class="terrain-btn" data-type="difficult">
+                    <span class="icon">🌲</span>
+                    <span>Difficult Terrain</span>
+                </button>
+                <button class="terrain-btn" data-type="speedy">
+                    <span class="icon">💨</span>
+                    <span>Speedy Terrain</span>
+                </button>
+                <button class="terrain-btn" data-type="current">
+                    <span class="icon">🌊</span>
+                    <span>Current</span>
+                </button>
+                <button class="terrain-btn" data-type="hazard">
+                    <span class="icon">⚠️</span>
+                    <span>Hazard</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="section" id="terrainSettings" style="display: none;">
+            <h2>Terrain Settings</h2>
+            <div id="settingsContent"></div>
+            <button id="applyTerrain" class="primary-btn">Apply Terrain</button>
+        </div>
+
+        <div class="section">
+            <h2>Active Terrain</h2>
+            <div id="activeTerrainList" class="terrain-list">
+                <p class="empty-state">No active terrain areas</p>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>
