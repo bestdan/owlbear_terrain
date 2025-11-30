@@ -1,4 +1,4 @@
-import OBR, { buildPath, Item } from "@owlbear-rodeo/sdk";
+import OBR, { buildPath, buildText, Item } from "@owlbear-rodeo/sdk";
 import { grid, Point } from "@davidsev/owlbear-utils";
 import { CellOutliner, Command } from "./utils/CellOutliner";
 
@@ -176,7 +176,38 @@ OBR.onReady(async () => {
                     // Add items to scene before stopping interaction
                     if (items.length > 0) {
                         try {
-                            await OBR.scene.items.addItems(items);
+                            const terrainData = items[0].metadata['owlbear-terrain/data'] as any;
+                            const itemsToAdd: Item[] = [items[0]];
+
+                            // If it's altitude terrain, add a text label showing the height
+                            if (terrainData && terrainData.type === 'altitude' && terrainData.heightLevel !== undefined) {
+                                const label = buildText()
+                                    .position({ x: items[0].position.x + 5, y: items[0].position.y + 5 })
+                                    .plainText(`${terrainData.heightLevel}`)
+                                    .textType('PLAIN')
+                                    .fontWeight(700)
+                                    .fontSize(32)
+                                    .width(60)
+                                    .height(40)
+                                    .strokeColor('#000000')
+                                    .strokeWidth(3)
+                                    .textAlign('LEFT')
+                                    .textAlignVertical('TOP')
+                                    .fillColor('#FFFFFF')
+                                    .metadata({
+                                        'owlbear-terrain/type': 'altitude-label',
+                                        'owlbear-terrain/parentId': items[0].id
+                                    })
+                                    .locked(true)
+                                    .layer('TEXT')
+                                    .name(`${terrainData.name} (label)`)
+                                    .attachedTo(items[0].id)
+                                    .build();
+
+                                itemsToAdd.push(label);
+                            }
+
+                            await OBR.scene.items.addItems(itemsToAdd);
                             console.log('Items added successfully');
                         } catch (error) {
                             console.error('Failed to add items:', error);
