@@ -15,6 +15,7 @@
   ],
   "author": "",
   "license": "MIT",
+  "packageManager": "pnpm@9.15.0",
   "devDependencies": {
     "vite": "^5.0.0"
   },
