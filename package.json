@@ -17,9 +17,13 @@
   "license": "MIT",
   "packageManager": "pnpm@9.15.0",
   "devDependencies": {
-    "vite": "^5.0.0"
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vite": "^5.0.0",
+    "vite-plugin-mkcert": "^1.17.9"
   },
   "dependencies": {
+    "@davidsev/owlbear-utils": "^1.1.2",
     "@owlbear-rodeo/sdk": "^3.1.0"
   }
 }

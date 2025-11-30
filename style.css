@@ -19,6 +19,8 @@ body {
     background-color: var(--background);
     color: var(--text);
     line-height: 1.6;
+    overflow-y: auto;
+    max-height: 100vh;
 }
 
 .container {
@@ -184,4 +186,100 @@ h2 {
 .settings-group select:focus {
     outline: none;
     border-color: var(--primary-color);
+}
+
+.field-hint {
+    display: block;
+    margin-top: 4px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.grid-info {
+    background-color: var(--surface);
+    border-left: 3px solid var(--secondary-color);
+    border-radius: 4px;
+    padding: 10px 12px;
+    margin-bottom: 20px;
+}
+
+.grid-info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.grid-info-label {
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.grid-info-value {
+    color: var(--text);
+}
+
+.hidden {
+    display: none !important;
+}
+
+.button-group {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.secondary-btn {
+    flex: 1;
+    background-color: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 24px;
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.secondary-btn:hover {
+    border-color: var(--text-secondary);
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.button-group .primary-btn,
+.button-group .secondary-btn {
+    flex: 1;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.section-header h2 {
+    margin-bottom: 0;
+}
+
+.danger-btn {
+    background-color: transparent;
+    border: 1px solid #e74c3c;
+    border-radius: 4px;
+    padding: 6px 12px;
+    color: #e74c3c;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.danger-btn:hover {
+    background-color: rgba(231, 76, 60, 0.1);
+}
+
+.danger-btn:active {
+    background-color: rgba(231, 76, 60, 0.2);
 }

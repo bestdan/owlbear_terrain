@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite';
+import mkcert from 'vite-plugin-mkcert';
 
 export default defineConfig({
+  plugins: [mkcert()],
   build: {
     outDir: 'dist',
     rollupOptions: {
@@ -13,9 +15,14 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    host: true, // Listen on all addresses including LAN
     open: false,
     cors: {
-      origin: "https://www.owlbear.rodeo",
+      origin: '*',
+      credentials: true,
+    },
+    headers: {
+      'Access-Control-Allow-Private-Network': 'true',
     },
   },
   publicDir: 'public'
