@@ -36,7 +36,7 @@ OBR.onReady(async () => {
             id: TOOL_ID,
             shortcut: "N",
             icons: [{
-                icon: "/icon.svg",
+                icon: "/terrain_icon.svg",
                 label: "Terrain",
             }],
             defaultMode: TOOL_MODE_ID,
