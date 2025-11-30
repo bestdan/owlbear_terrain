@@ -17,7 +17,7 @@ Owlbear Terrain is an extension for Owlbear Rodeo that adds advanced terrain fea
 - **Frontend**: Vanilla JavaScript (ES6+), HTML5, CSS3
 - **Build Tool**: Vite
 - **SDK**: Owlbear Rodeo SDK (@owlbear-rodeo/sdk)
-- **Package Manager**: npm
+- **Package Manager**: pnpm
 
 ## Project Structure
 
@@ -56,9 +56,9 @@ owlbear_terrain/
 ## Testing
 
 When testing changes:
-1. Run `npm install` to install dependencies
-2. Run `npm run dev` for development server
-3. Run `npm run build` to create production build
+1. Run `pnpm install` to install dependencies
+2. Run `pnpm run dev` for development server
+3. Run `pnpm run build` to create production build
 4. Test in Owlbear Rodeo using the local development server or by loading the built extension
 
 ## Common Tasks

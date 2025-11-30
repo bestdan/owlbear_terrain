@@ -21,11 +21,11 @@ An Owlbear Rodeo extension that supports more detailed terrain features, includi
 1. Clone this repository
 2. Install dependencies:
    ```bash
-   npm install
+   pnpm install
    ```
 3. Start the development server:
    ```bash
-   npm run dev
+   pnpm run dev
    ```
 4. In Owlbear Rodeo, add the extension using the local development URL (typically `http://localhost:3000`)
 
@@ -33,7 +33,7 @@ An Owlbear Rodeo extension that supports more detailed terrain features, includi
 
 1. Build the extension:
    ```bash
-   npm run build
+   pnpm run build
    ```
 2. Host the `dist` folder on a web server
 3. Add the extension to Owlbear Rodeo using your hosted URL

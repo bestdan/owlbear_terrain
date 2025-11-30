@@ -1,9 +1,9 @@
 {
   "name": "Owlbear Terrain",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "manifest_version": 1,
   "description": "Advanced terrain features for Owlbear Rodeo including altitude, difficult terrain, currents, and terrain effects",
-  "author": "bestdan",
+  "author": "Dan Egan",
   "icon": "/icon.svg",
   "action": {
     "title": "Terrain Tools",
