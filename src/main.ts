@@ -164,8 +164,11 @@ OBR.onReady(async () => {
                     const items = update((items: any[]) => {
                         if (items.length > 0) {
                             delete items[0].metadata['owlbear-terrain/temp'];
-                            // Update stroke dash in style (remove the dashed line)
+                            // Update style: transparent fill with thick dark grey stroke
                             items[0].style.strokeDash = [];
+                            items[0].style.fillOpacity = 0; // Make fill transparent
+                            items[0].style.strokeColor = '#404040'; // Dark grey
+                            items[0].style.strokeWidth = 16; // Thick stroke
                             items[0].metadata['owlbear-terrain/cellCount'] = selectedCells.size;
                         }
                     });
@@ -181,9 +184,12 @@ OBR.onReady(async () => {
 
                             // If it's altitude terrain, add a text label showing the height
                             if (terrainData && terrainData.type === 'altitude' && terrainData.heightLevel !== undefined) {
+                                const heightValue = terrainData.heightLevel;
+                                const heightText = heightValue >= 0 ? `+${heightValue}` : `${heightValue}`;
+
                                 const label = buildText()
                                     .position({ x: items[0].position.x + 5, y: items[0].position.y + 5 })
-                                    .plainText(`${terrainData.heightLevel}`)
+                                    .plainText(heightText)
                                     .textType('PLAIN')
                                     .fontWeight(700)
                                     .fontSize(32)
@@ -269,12 +275,6 @@ function setupEventListeners() {
         });
     });
 
-    // Apply terrain button
-    const applyBtn = document.getElementById('applyTerrain');
-    if (applyBtn) {
-        applyBtn.addEventListener('click', startTerrainDrawing);
-    }
-
     // Clear all terrain button
     const clearAllBtn = document.getElementById('clearAllTerrain');
     if (clearAllBtn) {
@@ -344,7 +344,7 @@ function showTerrainSettings(type: string) {
             settingsHTML = `
                 <div class="settings-group">
                     <label>Height Level (${gridInfo?.scale?.unit || 'ft'})</label>
-                    <input type="number" id="heightLevel" value="0" step="${gridInfo?.scale?.multiplier || 5}" />
+                    <input type="number" id="heightLevel" value="20" step="${gridInfo?.scale?.multiplier || 5}" />
                 </div>
                 <div class="settings-group">
                     <label>Name (optional)</label>
@@ -418,6 +418,17 @@ function showTerrainSettings(type: string) {
     }
 
     settingsContent.innerHTML = settingsHTML;
+
+    // Automatically activate the tool whenever settings change
+    const inputs = settingsContent.querySelectorAll('input, select');
+    inputs.forEach(input => {
+        input.addEventListener('change', () => {
+            startTerrainDrawing();
+        });
+    });
+
+    // Activate the tool immediately with current settings
+    startTerrainDrawing();
 }
 
 async function startTerrainDrawing() {
@@ -438,7 +449,7 @@ async function startTerrainDrawing() {
 
     switch (selectedTerrainType) {
         case 'altitude':
-            pendingTerrainData.heightLevel = parseInt((document.getElementById('heightLevel') as HTMLInputElement)?.value || '0');
+            pendingTerrainData.heightLevel = parseInt((document.getElementById('heightLevel') as HTMLInputElement)?.value || '20');
             break;
         case 'difficult':
         case 'speedy':
