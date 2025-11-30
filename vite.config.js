@@ -13,7 +13,10 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    open: false
+    open: false,
+    cors: {
+      origin: "https://www.owlbear.rodeo",
+    },
   },
   publicDir: 'public'
 });
