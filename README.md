@@ -73,9 +73,39 @@ Define terrain that triggers effects when entered.
 ## Technical Details
 
 Built with:
-- Vanilla JavaScript (ES6+)
+- TypeScript
 - Owlbear Rodeo SDK
 - Vite for building and development
+- Vitest for testing
+
+### Project Structure
+
+```
+src/
+├── config/           # Configuration and constants
+│   └── constants.ts  # Tool IDs and terrain styles
+├── services/         # Business logic services
+│   ├── gridService.ts      # Grid information management
+│   ├── terrainService.ts   # Terrain operations
+│   └── toolService.ts      # Tool registration and drawing
+├── ui/               # User interface components
+│   └── terrainUI.ts  # UI components and form handling
+├── utils/            # Utility functions
+│   └── CellOutliner.ts  # Cell outlining algorithm
+└── tests/            # Unit tests
+    ├── gridService.test.ts
+    ├── terrainService.test.ts
+    └── terrainUI.test.ts
+```
+
+### Development
+
+Run tests:
+```bash
+pnpm test        # Run tests in watch mode
+pnpm test:run    # Run tests once
+pnpm test:ui     # Run tests with UI
+```
 
 ## License
 
