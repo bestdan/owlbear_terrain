@@ -283,3 +283,51 @@ h2 {
 .danger-btn:active {
     background-color: rgba(231, 76, 60, 0.2);
 }
+
+.action-btn {
+    width: 100%;
+    background-color: var(--secondary-color);
+    border: none;
+    border-radius: 6px;
+    padding: 12px 24px;
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.action-btn:hover {
+    opacity: 0.9;
+}
+
+.action-btn:active {
+    opacity: 0.8;
+}
+
+.section-description {
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+
+.help-text {
+    background-color: var(--surface);
+    border-left: 3px solid var(--secondary-color);
+    border-radius: 4px;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.help-text strong {
+    color: var(--text);
+    display: block;
+    margin-bottom: 6px;
+}
