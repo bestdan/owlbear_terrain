@@ -9,6 +9,9 @@ interface MovementState {
     highlightedCells: Cell[];
 }
 
+// Default token size for bounding box checks (in pixels)
+const DEFAULT_TOKEN_SIZE = 50;
+
 export async function registerMovementTool() {
     console.log("Registering Movement Constraint tool");
 
@@ -40,7 +43,7 @@ export async function registerMovementTool() {
                 
                 // Simple bounding box check
                 const pos = item.position;
-                const bounds = (item as any).bounds || { width: 50, height: 50 };
+                const bounds = (item as any).bounds || { width: DEFAULT_TOKEN_SIZE, height: DEFAULT_TOKEN_SIZE };
                 
                 return event.pointerPosition.x >= pos.x - bounds.width / 2 &&
                        event.pointerPosition.x <= pos.x + bounds.width / 2 &&
@@ -76,8 +79,8 @@ export async function registerMovementTool() {
                 const clickedCell = grid.getCell(point);
                 
                 const isAdjacentCell = state.highlightedCells.some(cell => 
-                    Math.abs(cell.center.x - clickedCell.center.x) < 1 &&
-                    Math.abs(cell.center.y - clickedCell.center.y) < 1
+                    Math.abs(cell.center.x - clickedCell.center.x) < grid.dpi / 2 &&
+                    Math.abs(cell.center.y - clickedCell.center.y) < grid.dpi / 2
                 );
                 
                 if (isAdjacentCell) {

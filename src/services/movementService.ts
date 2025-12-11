@@ -58,10 +58,6 @@ export async function isPlayerOwnedToken(item: Item): Promise<boolean> {
         // Get current player
         const player = await OBR.player.getRole();
         
-        // In OBR, items created by a player are owned by them
-        // Check if current player can control this item
-        const metadata = item.metadata;
-        
         // If player is GM, they can control everything
         if (player === 'GM') {
             return true;
