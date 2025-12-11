@@ -1,6 +1,8 @@
 // Tool identifiers
 export const TOOL_ID = "owlbear-terrain/tool";
 export const TOOL_MODE_ID = "owlbear-terrain/draw-mode";
+export const MOVEMENT_TOOL_ID = "owlbear-terrain/movement-tool";
+export const MOVEMENT_MODE_ID = "owlbear-terrain/movement-mode";
 
 // Terrain type colors and styles
 export const TERRAIN_STYLES: Record<string, { fillColor: string, strokeColor: string, fillOpacity: number }> = {

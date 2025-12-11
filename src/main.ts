@@ -1,8 +1,9 @@
 import OBR from "@owlbear-rodeo/sdk";
-import { TOOL_ID } from "./config/constants";
+import { TOOL_ID, MOVEMENT_TOOL_ID } from "./config/constants";
 import { GridInfo, loadGridInfo, updateGridDisplay } from "./services/gridService";
 import { TerrainData, loadTerrainAreas, clearAllTerrain } from "./services/terrainService";
 import { registerTerrainTool } from "./services/toolService";
+import { registerMovementTool } from "./services/movementToolService";
 import { updateTerrainList, setupTerrainRemovalHandler, showTerrainSettings, collectTerrainData } from "./ui/terrainUI";
 
 // UI state (popover context only)
@@ -18,6 +19,7 @@ OBR.onReady(async () => {
         // Background mode - register the tool
         console.log("Owlbear Terrain background loaded");
         await registerTerrainTool();
+        await registerMovementTool();
         return;
     }
 
@@ -76,6 +78,14 @@ function setupEventListeners() {
         });
     });
 
+    // Movement mode activation button
+    const activateMovementBtn = document.getElementById('activateMovementMode');
+    if (activateMovementBtn) {
+        activateMovementBtn.addEventListener('click', async () => {
+            await activateMovementMode();
+        });
+    }
+
     // Clear all terrain button
     const clearAllBtn = document.getElementById('clearAllTerrain');
     if (clearAllBtn) {
@@ -128,6 +138,45 @@ async function startTerrainDrawing() {
         }
     } catch (error) {
         console.error('Error activating tool:', error);
+        OBR.notification.show(
+            'Error: ' + (error as Error).message,
+            'ERROR'
+        );
+    }
+}
+
+async function activateMovementMode() {
+    console.log('Activating movement mode');
+    
+    try {
+        // Activate the movement tool
+        await OBR.tool.activateTool(MOVEMENT_TOOL_ID);
+        console.log('Movement tool activation called');
+        
+        // Verify tool is active
+        const activeTool = await OBR.tool.getActiveTool();
+        console.log('Active tool after activation:', activeTool);
+        
+        if (activeTool === MOVEMENT_TOOL_ID) {
+            // Show help text
+            const helpDiv = document.getElementById('movementModeHelp');
+            if (helpDiv) {
+                helpDiv.style.display = 'block';
+            }
+            
+            OBR.notification.show(
+                'Movement Mode active! Click a player-owned token to begin moving.',
+                'INFO'
+            );
+        } else {
+            console.error('Movement tool activation failed. Active tool is:', activeTool);
+            OBR.notification.show(
+                'Failed to activate movement tool. Please try pressing M or clicking the Movement icon in the toolbar.',
+                'ERROR'
+            );
+        }
+    } catch (error) {
+        console.error('Error activating movement tool:', error);
         OBR.notification.show(
             'Error: ' + (error as Error).message,
             'ERROR'
